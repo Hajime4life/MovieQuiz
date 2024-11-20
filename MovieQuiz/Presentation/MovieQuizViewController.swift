@@ -59,8 +59,11 @@ final class MovieQuizViewController: UIViewController {
     }
     
     @IBAction private func onNoClicked() {
+        showAnswerResult(isCorrect: true == questions[currentQuestionIndex].correctAnswer)
     }
+    
     @IBAction private func onYesClicked() {
+        showAnswerResult(isCorrect: false == questions[currentQuestionIndex].correctAnswer)
     }
     
     private func convert(model: QuizQuestion) -> QuizStepViewModel {
@@ -76,6 +79,13 @@ final class MovieQuizViewController: UIViewController {
         textLabel.text = step.question
         imageView.image = step.image
         counterLabel.text = step.questionNumber
+    }
+    
+    private func showAnswerResult(isCorrect: Bool) {
+        imageView.layer.masksToBounds = true // даём разрешение на рисование рамки
+        imageView.layer.borderWidth = 5 // толщина рамки
+        imageView.layer.borderColor = isCorrect ? UIColor.green.cgColor : UIColor.red.cgColor
+        imageView.layer.cornerRadius = 6 // радиус скругления углов рамки
     }
 }
 
