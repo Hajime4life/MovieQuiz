@@ -43,15 +43,18 @@ final class MovieQuizViewController: UIViewController {
             text: "Рейтинг этого фильма больше чем 6?",
             correctAnswer: false)
     ]
+    private var allRoundsResults: [QuizResultsModel] = []
+
     private var currentQuestionIndex = 0
     private var correctAnswers = 0
+    private var lastRoundResult: QuizResultsModel? = nil
     
     @IBOutlet private weak var counterLabel: UILabel!
     @IBOutlet private weak var textLabel: UILabel!
     @IBOutlet private weak var imageView: UIImageView!
     @IBOutlet private weak var noButton: UIButton!
     @IBOutlet private weak var yesButton: UIButton!
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         show(quiz: convert(model: questions[currentQuestionIndex]))
@@ -82,6 +85,7 @@ final class MovieQuizViewController: UIViewController {
     
     private func showAnswerResult(isCorrect: Bool) {
         if isCorrect { correctAnswers += 1 }
+        switchButtonVisability(wantToHide: true)
         imageView.layer.masksToBounds = true // даём разрешение на рисование рамки
         imageView.layer.borderWidth = 8
         imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
@@ -90,25 +94,66 @@ final class MovieQuizViewController: UIViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.showNextQuestionOrResults()
             self.imageView.layer.borderWidth = 0
+            self.switchButtonVisability(wantToHide: false)
         }
     }
     
     private func showNextQuestionOrResults() {
-        if currentQuestionIndex == questions.count - 1 { /// нету вопросов больше
-            let text = "Ваш результат: \(correctAnswers)/10"
+        if currentQuestionIndex == questions.count - 1 { /// раунд завершен
+            lastRoundResult = QuizResultsModel(roundResult: correctAnswers, roundDate: Date())
+            allRoundsResults.append(lastRoundResult!)
+            
+            var text = ""
+            
+            if allRoundsResults.count <= 1 {
+                text = "Ваш результат: \(correctAnswers)/\(questions.count)"
+            } else {
+                let bestRound = findRecordedResult()
+                text = """
+                Ваш результат: \(correctAnswers)/\(questions.count)
+                Количество сыгранных квизов: \(allRoundsResults.count)
+                Рекорд: \(bestRound.roundResult)/\(questions.count) (\(bestRound.roundDate?.dateTimeString ?? ""))
+                Средняя точность:\(countMiddleResult())%
+                """
+            }
             let viewModel = QuizResultsViewModel(
                 title: "Этот раунд окончен!",
                 text: text,
                 buttonText: "Сыграть ещё раз"
             )
-            showResult(quiz: viewModel)
+            
+            showResultAlert(quiz: viewModel) /// тут уже произайдут обнуления
+            
         } else { /// идем дальше к след. вопросу
             currentQuestionIndex += 1
             show(quiz: convert(model: questions[currentQuestionIndex]))
         }
     }
     
-    private func showResult(quiz result: QuizResultsViewModel) {
+    private func countMiddleResult() -> Float {
+        var totalAccuracy: Float = 0.0
+        for result in allRoundsResults {
+            let accuracy = (Float(result.roundResult) / Float(questions.count)) * 100
+            totalAccuracy += accuracy
+        }
+        
+        let persent = totalAccuracy / Float(allRoundsResults.count)
+        return round(persent * 100) / 100 /// округляем от лишних знаков после запятой | пришлось помучаться в гугле ради этого решения :)
+    }
+    
+    private func findRecordedResult() -> QuizResultsModel {
+        var bestRound = allRoundsResults[0]
+        
+        for round in allRoundsResults {
+            if round.roundResult > bestRound.roundResult {
+                bestRound = round
+            }
+        }
+        
+        return bestRound
+    }
+    
+    private func showResultAlert(quiz result: QuizResultsViewModel) {
         let alert = UIAlertController(
             title: result.title,
             message: result.text,
@@ -117,7 +162,6 @@ final class MovieQuizViewController: UIViewController {
         let action = UIAlertAction(title: result.buttonText, style: .default) { _ in
             self.currentQuestionIndex = 0
             self.correctAnswers = 0
-            
             let firstQuestion = self.questions[self.currentQuestionIndex]
             let viewModel = self.convert(model: firstQuestion)
             self.show(quiz: viewModel)
@@ -125,6 +169,13 @@ final class MovieQuizViewController: UIViewController {
         
         alert.addAction(action)
         self.present(alert, animated: true, completion: nil)
+    }
+    
+    private func switchButtonVisability(wantToHide: Bool) {
+        noButton.isEnabled = !wantToHide
+        yesButton.isEnabled = !wantToHide
+        noButton.layer.opacity = wantToHide ? 0.5 : 1
+        yesButton.layer.opacity = wantToHide ? 0.5 : 1
     }
 }
 
@@ -144,7 +195,24 @@ struct QuizStepViewModel {
 }
 
 struct QuizResultsViewModel {
-  let title: String // строка с заголовком алерта
-  let text: String  // строка с текстом о количестве набранных очков
-  let buttonText: String  // текст для кнопки алерта
+    let title: String // строка с заголовком алерта
+    let text: String  // строка с текстом о количестве набранных очков
+    let buttonText: String  // текст для кнопки алерта
+}
+
+// класс для хранения результатов теста
+final class QuizResultsModel {
+    var roundResult: Int
+    var roundDate: Date?
+    
+    init() {
+        self.roundResult = 0
+        self.roundDate = nil
+    }
+    
+    init(roundResult: Int, roundDate: Date) {
+        self.roundResult = roundResult
+        self.roundDate = roundDate
+    }
+    
 }
