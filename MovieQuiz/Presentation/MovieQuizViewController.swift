@@ -58,6 +58,10 @@ final class MovieQuizViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         show(quiz: convert(model: questions[currentQuestionIndex]))
+        
+        // Скругляем края при инициализации View
+        imageView.layer.masksToBounds = true
+        imageView.layer.cornerRadius = 20
     }
     
     @IBAction private func onNoClicked() {
@@ -86,10 +90,8 @@ final class MovieQuizViewController: UIViewController {
     private func showAnswerResult(isCorrect: Bool) {
         if isCorrect { correctAnswers += 1 }
         switchButtonVisability(wantToHide: true)
-        imageView.layer.masksToBounds = true // даём разрешение на рисование рамки
         imageView.layer.borderWidth = 8
         imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
-        imageView.layer.cornerRadius = 20
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.showNextQuestionOrResults()
@@ -130,7 +132,8 @@ final class MovieQuizViewController: UIViewController {
         }
     }
     
-    private func countMiddleResult() -> Float {
+    private func countMiddleResult() -> Int {
+        guard questions.count != 0 else { return 0 }
         var totalAccuracy: Float = 0.0
         for result in allRoundsResults {
             let accuracy = (Float(result.roundResult) / Float(questions.count)) * 100
@@ -138,7 +141,7 @@ final class MovieQuizViewController: UIViewController {
         }
         
         let persent = totalAccuracy / Float(allRoundsResults.count)
-        return round(persent * 100) / 100 /// округляем от лишних знаков после запятой | пришлось помучаться в гугле ради этого решения :)
+        return  Int(round(persent)) /// округляем от лишних знаков после запятой | пришлось помучаться в гугле ради этого решения :)
     }
     
     private func findRecordedResult() -> QuizResultsModel {
@@ -181,10 +184,8 @@ final class MovieQuizViewController: UIViewController {
 
 struct QuizQuestion {
     let image: String
-    // строка с вопросом о рейтинге фильма
-    let text: String
-    // булевое значение (true, false), правильный ответ на вопрос
-    let correctAnswer: Bool
+    let text: String // строка с вопросом о рейтинге фильма
+    let correctAnswer: Bool // булевое значение (true, false), правильный ответ на вопрос
 }
 
 // вью модель для состояния "Вопрос показан"
