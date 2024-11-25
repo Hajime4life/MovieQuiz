@@ -1,13 +1,8 @@
-//
-//  QuestionFactory.swift
-//  Hajime
-//  Created by mac on 22.11.2024.
-//
-
 import Foundation
 
-
 class QuestionFactory: QuestionFactoryProtocol {
+    
+    // MARK: - mock данные
     private let questions: [QuizQuestion] = [
         QuizQuestion(
             image: "The Godfather",
@@ -51,10 +46,22 @@ class QuestionFactory: QuestionFactoryProtocol {
             correctAnswer: false)
     ]
     
-    func requestNextQuestion() -> QuizQuestion? {
+    weak var delegate: QuestionFactoryDelegate?
+    
+    // MARK: - методы
+    func requestNextQuestion() {
         guard let index = (0..<questions.count).randomElement() else {
-            return nil
+            delegate?.didReceiveNextQuestion(question: nil)
+            return
         }
-        return questions[safe: index]
+        
+        let question = questions[safe: index]
+        delegate?.didReceiveNextQuestion(question: question)
     }
+    
+    // MARK: - инициализация делегата
+    func setup(delegate: QuestionFactoryDelegate) {
+        self.delegate = delegate
+    }
+    
 }
