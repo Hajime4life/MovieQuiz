@@ -18,10 +18,11 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizQuestion?
     private var alertPresenter: AlertPresenterProtocol?
+    private var statisticService: StatisticServiceProtocol?
     
-    /// под сомнением, натыкал сам...
-    private var allRoundsResults: [QuizResultsModel] = [] // TODO: возможно нужно рефакторить, подумать над этим.
-    private var lastRoundResult: QuizResultsModel? = nil // TODO: возможно нужно рефакторить, подумать над этим.
+    // TODO: Самодельные свойства, они теперь не нужны, пока закомментирую, после review - удалю.
+    //private var allRoundsResults: [QuizResultsModel] = [] // TODO: возможно нужно рефакторить, подумать над этим.
+    //private var lastRoundResult: QuizResultsModel? = nil // TODO: возможно нужно рефакторить, подумать над этим.
     
     // MARK: - init's
     
@@ -43,6 +44,9 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         alert.delegate = self
         self.alertPresenter = alert
         
+        // Подключаем статистику
+        statisticService = StatisticService()
+        
         // Инициализируем первый вопрос
         questionFactory.requestNextQuestion()
     }
@@ -50,15 +54,16 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     // MARK: - actions
     @IBAction private func onNoClicked() {
         guard let currentQuestion = currentQuestion else { return }
-        showAnswerResult(isCorrect: true == currentQuestion.correctAnswer)
+        showAnswerResult(isCorrect: currentQuestion.correctAnswer)
     }
+    
     @IBAction private func onYesClicked() {
         guard let currentQuestion = currentQuestion else { return }
-        showAnswerResult(isCorrect: false == currentQuestion.correctAnswer)
+        showAnswerResult(isCorrect: !currentQuestion.correctAnswer)
     }
     
     // MARK: - public methods
-    // QuestionFactoryDelegate
+    // QuestionFactoryDelegate (получен ли новый вопрос)
     func didReceiveNextQuestion(question: QuizQuestion?) {
         guard let question = question else { return }
         currentQuestion = question
@@ -78,37 +83,42 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         return questionStep
     }
     // TODO: Возможно нерпавильно назвал метод, если что поправьте пожалуйста
+    
     private func convertMessageToAlert() -> AlertModel {
-        var finalText = ""
         
-        // Показываем всю статистику если окончено хотя бы 2 раунда иначе просто количество правильных ответов
-        if allRoundsResults.count > 1 {
-            let bestRound = findRecordedResult()
-            finalText = """
-            Ваш результат: \(correctAnswers)/\(questionsAmount)
-            Количество сыгранных квизов: \(allRoundsResults.count)
-            Рекорд: \(bestRound.roundResult)/\(questionsAmount) (\(bestRound.roundDate?.dateTimeString ?? ""))
-            Средняя точность: \(countMiddleResult())%
-            """
-        } else {
-            finalText = "Ваш результат: \(correctAnswers)/\(questionsAmount)"
+        guard let statisticService else {
+            return AlertModel(
+                title: "Что-то пошло не так(",
+                message: "Не удалось сформировать результат",
+                buttonText: "Попробовать еще раз") { [weak self] in
+                    guard let self = self else { return }
+                    resetCurrentRoundVars()
+                    questionFactory?.requestNextQuestion()
+                }
         }
         
-        // на всякий случай оставлю гарду, не знаю сработает ли это когданибудь... скорее крэш будет но всё же 😃
-        guard !finalText.isEmpty else { return AlertModel(
-            title: "Что-то пошло не так(",
-            message: "Не удалось сформировать результат",
-            buttonText: "Попробовать еще раз") { [weak self] in
-                guard let self = self else { return }
-                resetCurrentRoundVars()
-                questionFactory?.requestNextQuestion()
-            }
-        }
-        
+//        var finalText = ""
+//        Если до этого были сыграны игры то отображать общую статистику иначе просто количество правильных ответов
+//        if statisticService.gamesCount == 0 {
+//            finalText = """
+//            Ваш результат: \(correctAnswers)/\(questionsAmount)
+//            Количество сыгранных квизов: \(statisticService.gamesCount)
+//            Рекорд: \(statisticService.bestGame.correct)/\(statisticService.bestGame.total) (\(statisticService.bestGame.date.dateTimeString))
+//            Средняя точность: \(String(format: "%.2f", (statisticService.totalAccuracy)))%
+//            """
+//        } else {
+//            finalText = "Ваш результат: \(correctAnswers)/\(questionsAmount)"
+//        }
+                
         // Конвертируем в сообщение и отдаем алерт модель, сбрасываем раунд и запускаем следующий вопрос ( если есть, но его нет :) )
         let resultAlertMessage = AlertModel(
-            title: "Этот раунд окончен!",
-            message: finalText,
+            title: /*statisticService.gamesCount == 0 ?  "Раунд окончен!" :*/ "Этот раунд окончен!"  ,
+            message: """
+            Ваш результат: \(correctAnswers)/\(questionsAmount)
+            Количество сыгранных квизов: \(statisticService.gamesCount)
+            Рекорд: \(statisticService.bestGame.correct)/\(statisticService.bestGame.total) (\(statisticService.bestGame.date.dateTimeString))
+            Средняя точность: \(String(format: "%.2f", (statisticService.totalAccuracy)))%
+            """,
             buttonText: "Сыграть еще раз") { [weak self] in
                 guard let self = self else { return }
                 
@@ -118,13 +128,15 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         
         return resultAlertMessage
     }
+    
     private func show(quiz step: QuizStepViewModel) {
         textLabel.text = step.question
         imageView.image = step.image
         counterLabel.text = step.questionNumber
     }
+    
     private func showAnswerResult(isCorrect: Bool) {
-        if isCorrect { correctAnswers += 1 }
+        if isCorrect { correctAnswers += 1 } /// в случае если ответ правильно добавляем +1
         switchButtonVisability(wantToHide: true)
         imageView.layer.borderWidth = 8
         imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
@@ -136,32 +148,28 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             switchButtonVisability(wantToHide: false)
         }
     }
+    
     private func showNextQuestionOrResults() {
         if currentQuestionIndex == questionsAmount - 1 { /// раунд завершен
-            lastRoundResult = QuizResultsModel(roundResult: correctAnswers, roundDate: Date())
-            allRoundsResults.append(lastRoundResult!)
-
-            /* 
-             TODO: тут закомментировал вызов отображения алерта,
-             он помимо алерта обнулял результаты
-             и запускал "новый вопрос" questionFactory?.requestNextQuestion()
-             нужно придумать где это делать теперь
-             
-             showAlert(quiz: viewModel)
-             */
+            if let statisticService {
+                // сохраням текущие данные в UserDefaults
+                statisticService.store(correct: correctAnswers, total: questionsAmount)
+            }
+            // показываем алерт подсчитав данные из функции convertMessageToAlert
             alertPresenter?.show(parentController: self, alertData: convertMessageToAlert())
-            
             
         } else { /// идем дальше к след. вопросу
             currentQuestionIndex += 1
             questionFactory?.requestNextQuestion()
         }
     }
+    
     private func resetCurrentRoundVars() {
         // Чтобы избежать дубликации в дальнейшем
         self.currentQuestionIndex = 0
         self.correctAnswers = 0
     }
+    
     private func switchButtonVisability(wantToHide: Bool) {
         noButton.isEnabled = !wantToHide
         yesButton.isEnabled = !wantToHide
@@ -170,29 +178,29 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     }
     
     // TODO: Возможно надо будет удалить / переместить
-    private func countMiddleResult() -> Int {
-        guard questionsAmount != 0 else { return 0 }
-        var totalAccuracy: Float = 0.0
-        for result in allRoundsResults {
-            let accuracy = (Float(result.roundResult) / Float(questionsAmount)) * 100
-            totalAccuracy += accuracy
-        }
-        
-        let persent = totalAccuracy / Float(allRoundsResults.count)
-        return  Int(round(persent)) /// округляем от лишних знаков после запятой | пришлось помучаться в гугле ради этого решения :)
-    }
+//    private func countMiddleResult() -> Int {
+//        guard questionsAmount != 0 else { return 0 }
+//        var totalAccuracy: Float = 0.0
+//        for result in allRoundsResults {
+//            let accuracy = (Float(result.roundResult) / Float(questionsAmount)) * 100
+//            totalAccuracy += accuracy
+//        }
+//        
+//        let persent = totalAccuracy / Float(allRoundsResults.count)
+//        return  Int(round(persent)) /// округляем от лишних знаков после запятой | пришлось помучаться в гугле ради этого решения :)
+//    }
     // TODO: Возможно надо будет удалить / переместить
-    private func findRecordedResult() -> QuizResultsModel {
-        var bestRound = allRoundsResults[0]
-        
-        for round in allRoundsResults {
-            if round.roundResult > bestRound.roundResult {
-                bestRound = round
-            }
-        }
-        
-        return bestRound
-    }
+//    private func findRecordedResult() -> QuizResultsModel {
+//        var bestRound = allRoundsResults[0]
+//        
+//        for round in allRoundsResults {
+//            if round.roundResult > bestRound.roundResult {
+//                bestRound = round
+//            }
+//        }
+//        
+//        return bestRound
+//    }
     
     // TODO: тут закомментировал функцию алерта, возможно понадобится, переношу в AlertPresenter
 //    private func showAlert(quiz result: QuizResultsViewModel) {
@@ -216,18 +224,18 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
 
 // MARK: - Свой класс (возможно надо удалить/перенести)
 // TODO: Обязательно перенести этот класс в отдельный файл, пока не знаю нужен ли он вообще, может удалить придется...
-// класс для хранения результатов теста
-final class QuizResultsModel {
-    var roundResult: Int
-    var roundDate: Date?
-    
-    init() {
-        self.roundResult = 0
-        self.roundDate = nil
-    }
-    
-    init(roundResult: Int, roundDate: Date) {
-        self.roundResult = roundResult
-        self.roundDate = roundDate
-    }
-}
+// класс для хранения результатов теста (самодельный)
+//final class QuizResultsModel {
+//    var roundResult: Int
+//    var roundDate: Date?
+//    
+//    init() {
+//        self.roundResult = 0
+//        self.roundDate = nil
+//    }
+//    
+//    init(roundResult: Int, roundDate: Date) {
+//        self.roundResult = roundResult
+//        self.roundDate = roundDate
+//    }
+//}
