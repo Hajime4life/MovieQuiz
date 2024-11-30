@@ -18,7 +18,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizQuestion?
     private var alertPresenter: AlertPresenterProtocol?
-    private var statisticService: StatisticServiceProtocol?
+    private var statisticService: StatisticService? // не знаю почему вы решили по ТЗ что так надо назвать протокол но ладно
     
     // TODO: Самодельные свойства, они теперь не нужны, пока закомментирую, после review - удалю.
     //private var allRoundsResults: [QuizResultsModel] = [] // TODO: возможно нужно рефакторить, подумать над этим.
@@ -40,12 +40,12 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         self.questionFactory = questionFactory
         
         // Подключаем алерты
-        let alert = AlertPresenter()
+        let alert = ResultAlertPresenter()
         alert.delegate = self
         self.alertPresenter = alert
         
         // Подключаем статистику
-        statisticService = StatisticService()
+        statisticService = StatisticServiceImplementation()
         
         // Инициализируем первый вопрос
         questionFactory.requestNextQuestion()
@@ -176,8 +176,10 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         noButton.layer.opacity = wantToHide ? 0.5 : 1
         yesButton.layer.opacity = wantToHide ? 0.5 : 1
     }
-    
-    // TODO: Возможно надо будет удалить / переместить
+
+
+// TODO: УДАЛИТЬ ВСË НИЖЕ ПОСЛЕ РЕВЬЮ!!!!!!!!!!! -
+// TODO: Возможно надо будет удалить / переместить
 //    private func countMiddleResult() -> Int {
 //        guard questionsAmount != 0 else { return 0 }
 //        var totalAccuracy: Float = 0.0
@@ -222,8 +224,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
 
 }
 
-// MARK: - Свой класс (возможно надо удалить/перенести)
 // TODO: Обязательно перенести этот класс в отдельный файл, пока не знаю нужен ли он вообще, может удалить придется...
+// Свой класс (возможно надо удалить/перенести)
 // класс для хранения результатов теста (самодельный)
 //final class QuizResultsModel {
 //    var roundResult: Int
