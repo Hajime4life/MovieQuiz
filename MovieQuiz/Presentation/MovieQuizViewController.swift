@@ -1,6 +1,6 @@
 import UIKit
 
-final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, AlertPresenterDelegate {
+final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     // MARK: - outlet's
     @IBOutlet private weak var counterLabel: UILabel!
@@ -42,8 +42,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         
         // Подключаем алерты
         let alert = ResultAlertPresenter()
-        alert.delegate = self
-        self.alertPresenter = alert
         
         // Подключаем статистику
         statisticService = StatisticServiceImplementation()

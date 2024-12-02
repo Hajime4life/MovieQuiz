@@ -2,7 +2,7 @@ import Foundation
 
 final class StatisticServiceImplementation : StatisticService {
 
-    private let storage: UserDefaults = .standard /// Такой вариант пришлось использовать потому что в "extension" не дает такое свойство создать.
+    private let storage: UserDefaults = .standard
     
     private enum Keys: String {
         case correct

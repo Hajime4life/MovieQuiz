@@ -16,7 +16,6 @@
 		04381C802CF4A0300043A1C4 /* AlertModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04381C7F2CF4A0300043A1C4 /* AlertModel.swift */; };
 		045A9D4A2CF8F86A00021B24 /* ResultAlertPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 045A9D492CF8F86A00021B24 /* ResultAlertPresenter.swift */; };
 		045A9D4C2CF8FECD00021B24 /* AlertPresenterProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 045A9D4B2CF8FECD00021B24 /* AlertPresenterProtocol.swift */; };
-		045A9D4E2CF8FF3C00021B24 /* AlertPresenterDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 045A9D4D2CF8FF3C00021B24 /* AlertPresenterDelegate.swift */; };
 		045A9D502CF9EECB00021B24 /* StatisticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 045A9D4F2CF9EECB00021B24 /* StatisticService.swift */; };
 		045A9D522CF9F08F00021B24 /* GameResultModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 045A9D512CF9F08F00021B24 /* GameResultModel.swift */; };
 		045A9D542CF9F1D100021B24 /* StatisticServiceImplementation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 045A9D532CF9F1D100021B24 /* StatisticServiceImplementation.swift */; };
@@ -42,7 +41,6 @@
 		04381C7F2CF4A0300043A1C4 /* AlertModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertModel.swift; sourceTree = "<group>"; };
 		045A9D492CF8F86A00021B24 /* ResultAlertPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultAlertPresenter.swift; sourceTree = "<group>"; };
 		045A9D4B2CF8FECD00021B24 /* AlertPresenterProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPresenterProtocol.swift; sourceTree = "<group>"; };
-		045A9D4D2CF8FF3C00021B24 /* AlertPresenterDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPresenterDelegate.swift; sourceTree = "<group>"; };
 		045A9D4F2CF9EECB00021B24 /* StatisticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticService.swift; sourceTree = "<group>"; };
 		045A9D512CF9F08F00021B24 /* GameResultModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameResultModel.swift; sourceTree = "<group>"; };
 		045A9D532CF9F1D100021B24 /* StatisticServiceImplementation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticServiceImplementation.swift; sourceTree = "<group>"; };
@@ -101,7 +99,6 @@
 				AD1ABAB52831907B00B3E448 /* MovieQuizViewController.swift */,
 				045A9D492CF8F86A00021B24 /* ResultAlertPresenter.swift */,
 				045A9D4B2CF8FECD00021B24 /* AlertPresenterProtocol.swift */,
-				045A9D4D2CF8FF3C00021B24 /* AlertPresenterDelegate.swift */,
 				AD1ABAB72831907B00B3E448 /* Main.storyboard */,
 			);
 			path = Presentation;
@@ -239,7 +236,6 @@
 				045A9D502CF9EECB00021B24 /* StatisticService.swift in Sources */,
 				04381C802CF4A0300043A1C4 /* AlertModel.swift in Sources */,
 				045A9D522CF9F08F00021B24 /* GameResultModel.swift in Sources */,
-				045A9D4E2CF8FF3C00021B24 /* AlertPresenterDelegate.swift in Sources */,
 				045A9D4C2CF8FECD00021B24 /* AlertPresenterProtocol.swift in Sources */,
 				04381C7C2CF474B90043A1C4 /* QuestionFactoryDelegate.swift in Sources */,
 				AD1ABAB22831907B00B3E448 /* AppDelegate.swift in Sources */,
