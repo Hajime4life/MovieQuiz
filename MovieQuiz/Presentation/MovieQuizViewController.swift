@@ -33,6 +33,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         // Инициализация необходимых вьюшек
         imageView.layer.masksToBounds = true
         imageView.layer.cornerRadius = 20
+        imageView.contentMode = .scaleToFill
         
         // Подключаем фабрику вопросов
         let questionFactory = QuestionFactory()
