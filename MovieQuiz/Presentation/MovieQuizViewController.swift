@@ -8,8 +8,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     @IBOutlet private weak var imageView: UIImageView!
     @IBOutlet private weak var noButton: UIButton!
     @IBOutlet private weak var yesButton: UIButton!
-    
-    // MARK: - private vars
+    @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
     
     // MARK: - private vars
     private let questionsAmount: Int = 10
@@ -36,29 +35,28 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         imageView.contentMode = .scaleToFill
         
         // Подключаем фабрику вопросов
-        let questionFactory = QuestionFactory()
-        questionFactory.delegate = self
-        self.questionFactory = questionFactory
+        questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
         
         // Подключаем алерты
-        let alert = ResultAlertPresenter()
+        alertPresenter = ResultAlertPresenter()
         
         // Подключаем статистику
-        statisticService = StatisticServiceImplementation()
+        statisticService = StatisticService()
         
         // Инициализируем первый вопрос
-        questionFactory.requestNextQuestion()
+        showLoadingIndicator()
+        questionFactory?.loadData()
     }
     
     // MARK: - actions
     @IBAction private func onNoClicked() {
         guard let currentQuestion = currentQuestion else { return }
-        showAnswerResult(isCorrect: currentQuestion.correctAnswer)
+        showAnswerResult(isCorrect: !currentQuestion.correctAnswer)
     }
     
     @IBAction private func onYesClicked() {
         guard let currentQuestion = currentQuestion else { return }
-        showAnswerResult(isCorrect: !currentQuestion.correctAnswer)
+        showAnswerResult(isCorrect: currentQuestion.correctAnswer)
     }
     
     // MARK: - public methods
@@ -72,16 +70,50 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         }
     }
     
-    // MARK: - private methods
-    private func convert(model: QuizQuestion) -> QuizStepViewModel {
-        let questionStep = QuizStepViewModel(
-            image: UIImage(named: model.image) ?? UIImage(),
-            question: model.text,
-            questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)"
-        )
-        return questionStep
+    func didLoadDataFromServer() {
+        //activityIndicator.isHidden = true (так было в уроке, я вызвал свою функцию)
+        hideLoadingIndicator()
+        questionFactory?.requestNextQuestion()
     }
-    // TODO: Возможно нерпавильно назвал метод, если что поправьте пожалуйста
+    
+    func didFailToLoadData(with error: any Error) {
+        showNetworkError(message: error.localizedDescription)
+    }
+    
+    // MARK: - private methods
+    private func showLoadingIndicator() {
+        activityIndicator.isHidden = false
+        activityIndicator.startAnimating()
+    }
+    
+    private func hideLoadingIndicator() {
+        activityIndicator.isHidden = true
+        activityIndicator.stopAnimating()
+    }
+    
+    private func showNetworkError(message: String) {
+        hideLoadingIndicator()
+        
+        let alert = AlertModel(title: "Ошибка", message: message, buttonText: "Попробовать еще раз") { [weak self] in
+            guard let self = self else { return }
+            
+            self.currentQuestionIndex = 0
+            self.correctAnswers = 0
+            
+            self.questionFactory?.requestNextQuestion()
+        }
+        
+        alertPresenter?.show(parentController: self, alertData: alert)
+    }
+    
+    private func convert(model: QuizQuestion) -> QuizStepViewModel {
+        
+        return QuizStepViewModel(
+            image: UIImage(data: model.image) ?? UIImage(),
+            question: model.text,
+            questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
+        
+    }
     
     private func convertMessageToAlert() -> AlertModel {
         
@@ -96,22 +128,9 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
                 }
         }
         
-//        var finalText = ""
-//        Если до этого были сыграны игры то отображать общую статистику иначе просто количество правильных ответов
-//        if statisticService.gamesCount == 0 {
-//            finalText = """
-//            Ваш результат: \(correctAnswers)/\(questionsAmount)
-//            Количество сыгранных квизов: \(statisticService.gamesCount)
-//            Рекорд: \(statisticService.bestGame.correct)/\(statisticService.bestGame.total) (\(statisticService.bestGame.date.dateTimeString))
-//            Средняя точность: \(String(format: "%.2f", (statisticService.totalAccuracy)))%
-//            """
-//        } else {
-//            finalText = "Ваш результат: \(correctAnswers)/\(questionsAmount)"
-//        }
-                
         // Конвертируем в сообщение и отдаем алерт модель, сбрасываем раунд и запускаем следующий вопрос ( если есть, но его нет :) )
         let resultAlertMessage = AlertModel(
-            title: /*statisticService.gamesCount == 0 ?  "Раунд окончен!" :*/ "Этот раунд окончен!"  ,
+            title: "Этот раунд окончен!",
             message: """
             Ваш результат: \(correctAnswers)/\(questionsAmount)
             Количество сыгранных квизов: \(statisticService.gamesCount)
@@ -156,6 +175,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
             }
             // показываем алерт подсчитав данные из функции convertMessageToAlert
             alertPresenter?.show(parentController: self, alertData: convertMessageToAlert())
+           
             
         } else { /// идем дальше к след. вопросу
             currentQuestionIndex += 1
@@ -175,68 +195,4 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         noButton.layer.opacity = wantToHide ? 0.5 : 1
         yesButton.layer.opacity = wantToHide ? 0.5 : 1
     }
-
-
-// TODO: УДАЛИТЬ ВСË НИЖЕ ПОСЛЕ РЕВЬЮ!!!!!!!!!!! -
-// TODO: Возможно надо будет удалить / переместить
-//    private func countMiddleResult() -> Int {
-//        guard questionsAmount != 0 else { return 0 }
-//        var totalAccuracy: Float = 0.0
-//        for result in allRoundsResults {
-//            let accuracy = (Float(result.roundResult) / Float(questionsAmount)) * 100
-//            totalAccuracy += accuracy
-//        }
-//        
-//        let persent = totalAccuracy / Float(allRoundsResults.count)
-//        return  Int(round(persent)) /// округляем от лишних знаков после запятой | пришлось помучаться в гугле ради этого решения :)
-//    }
-    // TODO: Возможно надо будет удалить / переместить
-//    private func findRecordedResult() -> QuizResultsModel {
-//        var bestRound = allRoundsResults[0]
-//        
-//        for round in allRoundsResults {
-//            if round.roundResult > bestRound.roundResult {
-//                bestRound = round
-//            }
-//        }
-//        
-//        return bestRound
-//    }
-    
-    // TODO: тут закомментировал функцию алерта, возможно понадобится, переношу в AlertPresenter
-//    private func showAlert(quiz result: QuizResultsViewModel) {
-//        let alert = UIAlertController(
-//            title: result.title,
-//            message: result.text,
-//            preferredStyle: .alert)
-//        
-//        let action = UIAlertAction(title: result.buttonText, style: .default) { [weak self] _ in
-//            guard let self = self else { return }
-//            self.currentQuestionIndex = 0
-//            self.correctAnswers = 0
-//            questionFactory?.requestNextQuestion()
-//        }
-//        
-//        alert.addAction(action)
-//        self.present(alert, animated: true, completion: nil)
-//    }
-
 }
-
-// TODO: Обязательно перенести этот класс в отдельный файл, пока не знаю нужен ли он вообще, может удалить придется...
-// Свой класс (возможно надо удалить/перенести)
-// класс для хранения результатов теста (самодельный)
-//final class QuizResultsModel {
-//    var roundResult: Int
-//    var roundDate: Date?
-//    
-//    init() {
-//        self.roundResult = 0
-//        self.roundDate = nil
-//    }
-//    
-//    init(roundResult: Int, roundDate: Date) {
-//        self.roundResult = roundResult
-//        self.roundDate = roundDate
-//    }
-//}
