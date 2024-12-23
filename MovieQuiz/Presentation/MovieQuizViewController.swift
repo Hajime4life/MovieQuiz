@@ -70,10 +70,13 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         }
     }
     
-    func didLoadDataFromServer() {
-        //activityIndicator.isHidden = true (так было в уроке, я вызвал свою функцию)
-        hideLoadingIndicator()
-        questionFactory?.requestNextQuestion()
+    func didLoadDataFromServer(moviesCount: Int) {
+        if moviesCount > 0 {
+            hideLoadingIndicator()
+            questionFactory?.requestNextQuestion()
+        } else {
+            showNetworkError(title: "Что-то пошло не так(",  message: "Невозможно загрузить данные")
+        }
     }
     
     func didFailToLoadData(with error: any Error) {
@@ -84,23 +87,26 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     private func showLoadingIndicator() {
         activityIndicator.isHidden = false
         activityIndicator.startAnimating()
+        switchButtonVisability(wantToHide: true)
     }
     
     private func hideLoadingIndicator() {
         activityIndicator.isHidden = true
         activityIndicator.stopAnimating()
+        switchButtonVisability(wantToHide: false)
     }
     
-    private func showNetworkError(message: String) {
+    private func showNetworkError(title: String = "Ошибка", message: String) {
         hideLoadingIndicator()
         
-        let alert = AlertModel(title: "Ошибка", message: message, buttonText: "Попробовать еще раз") { [weak self] in
+        let alert = AlertModel(title: title, message: message, buttonText: "Попробовать еще раз") { [weak self] in
             guard let self = self else { return }
             
             self.currentQuestionIndex = 0
             self.correctAnswers = 0
             
-            self.questionFactory?.requestNextQuestion()
+            self.viewDidLoad()
+            //self.questionFactory?.requestNextQuestion()
         }
         
         alertPresenter?.show(parentController: self, alertData: alert)
