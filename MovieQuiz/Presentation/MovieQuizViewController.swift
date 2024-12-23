@@ -79,7 +79,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         }
     }
     
-    func didFailToLoadData(with error: any Error) {
+    func didFailToLoadData(with error: Error) {
         showNetworkError(message: error.localizedDescription)
     }
     
