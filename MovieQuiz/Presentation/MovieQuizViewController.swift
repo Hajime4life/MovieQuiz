@@ -143,7 +143,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
             Рекорд: \(statisticService.bestGame.correct)/\(statisticService.bestGame.total) (\(statisticService.bestGame.date.dateTimeString))
             Средняя точность: \(String(format: "%.2f", (statisticService.totalAccuracy)))%
             """,
-            buttonText: "Сыграть еще раз") { [weak self] in
+            buttonText: "Сыграть ещё раз") { [weak self] in
                 guard let self = self else { return }
                 
                 resetCurrentRoundVars()
