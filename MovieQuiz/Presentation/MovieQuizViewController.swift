@@ -11,13 +11,13 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
     
     // MARK: - private vars
-    private let questionsAmount: Int = 10
-    private var currentQuestionIndex = 0
     private var correctAnswers = 0
     private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizQuestion?
     private var alertPresenter: AlertPresenterProtocol?
-    private var statisticService: StatisticService? // не знаю почему вы решили по ТЗ что так надо назвать протокол но ладно
+    private var statisticService: StatisticService?
+    private let presenter = MovieQuizPresenter()
+
     
     // TODO: Самодельные свойства, они теперь не нужны, пока закомментирую, после review - удалю.
     //private var allRoundsResults: [QuizResultsModel] = [] // TODO: возможно нужно рефакторить, подумать над этим.
@@ -64,7 +64,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     func didReceiveNextQuestion(question: QuizQuestion?) {
         guard let question = question else { return }
         currentQuestion = question
-        let viewModel = convert(model: question)
+        let viewModel = presenter.convert(model: question)
         DispatchQueue.main.async { [weak self] in
             self?.show(quiz: viewModel)
         }
@@ -102,23 +102,13 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         let alert = AlertModel(title: title, message: message, buttonText: "Попробовать еще раз") { [weak self] in
             guard let self = self else { return }
             
-            self.currentQuestionIndex = 0
-            self.correctAnswers = 0
+            resetCurrentRoundVars() // TODO: перенес сюда эту функцию не уверен что она сейчас тут нужна
             
             self.viewDidLoad()
             //self.questionFactory?.requestNextQuestion()
         }
         
         alertPresenter?.show(parentController: self, alertData: alert)
-    }
-    
-    private func convert(model: QuizQuestion) -> QuizStepViewModel {
-        
-        return QuizStepViewModel(
-            image: UIImage(data: model.image) ?? UIImage(),
-            question: model.text,
-            questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
-        
     }
     
     private func convertMessageToAlert() -> AlertModel {
@@ -138,7 +128,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         let resultAlertMessage = AlertModel(
             title: "Этот раунд окончен!",
             message: """
-            Ваш результат: \(correctAnswers)/\(questionsAmount)
+            Ваш результат: \(correctAnswers)/\(presenter.questionsAmount)
             Количество сыгранных квизов: \(statisticService.gamesCount)
             Рекорд: \(statisticService.bestGame.correct)/\(statisticService.bestGame.total) (\(statisticService.bestGame.date.dateTimeString))
             Средняя точность: \(String(format: "%.2f", (statisticService.totalAccuracy)))%
@@ -174,24 +164,24 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     }
     
     private func showNextQuestionOrResults() {
-        if currentQuestionIndex == questionsAmount - 1 { /// раунд завершен
+        if presenter.isLastQuestion() { /// раунд завершен
             if let statisticService {
                 // сохраням текущие данные в UserDefaults
-                statisticService.store(correct: correctAnswers, total: questionsAmount)
+                statisticService.store(correct: correctAnswers, total: presenter.questionsAmount)
             }
             // показываем алерт подсчитав данные из функции convertMessageToAlert
             alertPresenter?.show(parentController: self, alertData: convertMessageToAlert())
            
             
         } else { /// идем дальше к след. вопросу
-            currentQuestionIndex += 1
+            presenter.switchToNextQuestion()
             questionFactory?.requestNextQuestion()
         }
     }
     
     private func resetCurrentRoundVars() {
         // Чтобы избежать дубликации в дальнейшем
-        self.currentQuestionIndex = 0
+        presenter.resetQuestionIndex()
         self.correctAnswers = 0
     }
     
