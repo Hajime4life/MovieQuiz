@@ -19,6 +19,15 @@ final class MovieQuizPresenter {
     
     // MARK: - PULBIC METHODS
     
+    func didReceiveNextQuestion(question: QuizQuestion?) {
+        guard let question = question else { return }
+        currentQuestion = question
+        let viewModel = self.convert(model: question)
+        DispatchQueue.main.async { [weak self] in
+            self?.viewController?.show(quiz: viewModel)
+        }
+    }
+    
     func noButtonClicked() {
         didAnswer(isYes: false)
     }
@@ -26,7 +35,6 @@ final class MovieQuizPresenter {
     func yesButtonClicked() {
         didAnswer(isYes: true)
     }
-    
     
     func isLastQuestion() -> Bool {
         currentQuestionIndex == questionsAmount - 1

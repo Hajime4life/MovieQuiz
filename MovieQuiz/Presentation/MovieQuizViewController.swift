@@ -70,6 +70,12 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         }
     }
     
+    func show(quiz step: QuizStepViewModel) {
+        textLabel.text = step.question
+        imageView.image = step.image
+        counterLabel.text = step.questionNumber
+    }
+    
     func didLoadDataFromServer(moviesCount: Int) {
         if moviesCount > 0 {
             hideLoadingIndicator()
@@ -157,11 +163,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         return resultAlertMessage
     }
     
-    private func show(quiz step: QuizStepViewModel) {
-        textLabel.text = step.question
-        imageView.image = step.image
-        counterLabel.text = step.questionNumber
-    }
+
     
     
     
