@@ -13,11 +13,11 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     // MARK: - private vars
     private var correctAnswers = 0
     private var questionFactory: QuestionFactoryProtocol?
-
-    private var alertPresenter: AlertPresenterProtocol?
     private var statisticService: StatisticService?
     private let presenter = MovieQuizPresenter()
 
+    // MARK: - public vars
+    var alertPresenter: AlertPresenterProtocol?
     
     // MARK: - init's
     
@@ -90,10 +90,22 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }
-            showNextQuestionOrResults()
             imageView.layer.borderWidth = 0
-            switchButtonVisability(wantToHide: false)
+
+            self.presenter.correctAnswers = self.correctAnswers
+            self.presenter.questionFactory = self.questionFactory
+            self.presenter.showNextQuestionOrResults()
+            
+            //presenter.showNextQuestionOrResults()
+             switchButtonVisability(wantToHide: false)
         }
+    }
+    
+    func switchButtonVisability(wantToHide: Bool) {
+        noButton.isEnabled = !wantToHide
+        yesButton.isEnabled = !wantToHide
+        noButton.layer.opacity = wantToHide ? 0.5 : 1
+        yesButton.layer.opacity = wantToHide ? 0.5 : 1
     }
     
     // MARK: - private methods
@@ -124,57 +136,57 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         alertPresenter?.show(parentController: self, alertData: alert)
     }
     
-    private func convertMessageToAlert() -> AlertModel {
-        
-        guard let statisticService else {
-            return AlertModel(
-                title: "Что-то пошло не так(",
-                message: "Не удалось сформировать результат",
-                buttonText: "Попробовать еще раз") { [weak self] in
-                    guard let self = self else { return }
-                    resetCurrentRoundVars()
-                    questionFactory?.requestNextQuestion()
-                }
-        }
-        
-        // Конвертируем в сообщение и отдаем алерт модель, сбрасываем раунд и запускаем следующий вопрос ( если есть, но его нет :) )
-        let resultAlertMessage = AlertModel(
-            title: "Этот раунд окончен!",
-            message: """
-            Ваш результат: \(correctAnswers)/\(presenter.questionsAmount)
-            Количество сыгранных квизов: \(statisticService.gamesCount)
-            Рекорд: \(statisticService.bestGame.correct)/\(statisticService.bestGame.total) (\(statisticService.bestGame.date.dateTimeString))
-            Средняя точность: \(String(format: "%.2f", (statisticService.totalAccuracy)))%
-            """,
-            buttonText: "Сыграть ещё раз") { [weak self] in
-                guard let self = self else { return }
-                
-                resetCurrentRoundVars()
-                questionFactory?.requestNextQuestion()
-            }
-        
-        return resultAlertMessage
-    }
+//    private func convertMessageToAlert() -> AlertModel {
+//        
+//        guard let statisticService else {
+//            return AlertModel(
+//                title: "Что-то пошло не так(",
+//                message: "Не удалось сформировать результат",
+//                buttonText: "Попробовать еще раз") { [weak self] in
+//                    guard let self = self else { return }
+//                    resetCurrentRoundVars()
+//                    questionFactory?.requestNextQuestion()
+//                }
+//        }
+//        
+//        // Конвертируем в сообщение и отдаем алерт модель, сбрасываем раунд и запускаем следующий вопрос ( если есть, но его нет :) )
+//        let resultAlertMessage = AlertModel(
+//            title: "Этот раунд окончен!",
+//            message: """
+//            Ваш результат: \(correctAnswers)/\(presenter.questionsAmount)
+//            Количество сыгранных квизов: \(statisticService.gamesCount)
+//            Рекорд: \(statisticService.bestGame.correct)/\(statisticService.bestGame.total) (\(statisticService.bestGame.date.dateTimeString))
+//            Средняя точность: \(String(format: "%.2f", (statisticService.totalAccuracy)))%
+//            """,
+//            buttonText: "Сыграть ещё раз") { [weak self] in
+//                guard let self = self else { return }
+//                
+//                resetCurrentRoundVars()
+//                questionFactory?.requestNextQuestion()
+//            }
+//        
+//        return resultAlertMessage
+//    }
     
 
     
     
-    
-    private func showNextQuestionOrResults() {
-        if presenter.isLastQuestion() { /// раунд завершен
-            if let statisticService {
-                // сохраням текущие данные в UserDefaults
-                statisticService.store(correct: correctAnswers, total: presenter.questionsAmount)
-            }
-            // показываем алерт подсчитав данные из функции convertMessageToAlert
-            alertPresenter?.show(parentController: self, alertData: convertMessageToAlert())
-           
-            
-        } else { /// идем дальше к след. вопросу
-            presenter.switchToNextQuestion()
-            questionFactory?.requestNextQuestion()
-        }
-    }
+// TODO: - Старый метод который работал, определял последний раунд и переключался на что нужно
+//    private func showNextQuestionOrResults() {
+//        if presenter.isLastQuestion() { /// раунд завершен
+//            if let statisticService {
+//                // сохраням текущие данные в UserDefaults
+//                statisticService.store(correct: correctAnswers, total: presenter.questionsAmount)
+//            }
+//            // показываем алерт подсчитав данные из функции convertMessageToAlert
+//            alertPresenter?.show(parentController: self, alertData: convertMessageToAlert())
+//           
+//            
+//        } else { /// идем дальше к след. вопросу
+//            presenter.switchToNextQuestion()
+//            questionFactory?.requestNextQuestion()
+//        }
+//    }
     
     private func resetCurrentRoundVars() {
         // Чтобы избежать дубликации в дальнейшем
@@ -182,10 +194,5 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         self.correctAnswers = 0
     }
     
-    private func switchButtonVisability(wantToHide: Bool) {
-        noButton.isEnabled = !wantToHide
-        yesButton.isEnabled = !wantToHide
-        noButton.layer.opacity = wantToHide ? 0.5 : 1
-        yesButton.layer.opacity = wantToHide ? 0.5 : 1
-    }
+
 }
