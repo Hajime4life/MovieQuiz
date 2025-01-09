@@ -19,15 +19,14 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     private let presenter = MovieQuizPresenter()
 
     
-    // TODO: Самодельные свойства, они теперь не нужны, пока закомментирую, после review - удалю.
-    //private var allRoundsResults: [QuizResultsModel] = [] // TODO: возможно нужно рефакторить, подумать над этим.
-    //private var lastRoundResult: QuizResultsModel? = nil // TODO: возможно нужно рефакторить, подумать над этим.
-    
     // MARK: - init's
     
     // MARK: - overrides
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // Инициализация контроллера в презенторе
+        presenter.viewController = self
         
         // Инициализация необходимых вьюшек
         imageView.layer.masksToBounds = true
@@ -50,13 +49,14 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     // MARK: - actions
     @IBAction private func onNoClicked() {
-        guard let currentQuestion = currentQuestion else { return }
-        showAnswerResult(isCorrect: !currentQuestion.correctAnswer)
+        presenter.currentQuestion = currentQuestion
+        presenter.noButtonClicked()
+        
     }
     
     @IBAction private func onYesClicked() {
-        guard let currentQuestion = currentQuestion else { return }
-        showAnswerResult(isCorrect: currentQuestion.correctAnswer)
+        presenter.currentQuestion = currentQuestion
+        presenter.yesButtonClicked()
     }
     
     // MARK: - public methods
@@ -81,6 +81,20 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     func didFailToLoadData(with error: Error) {
         showNetworkError(message: error.localizedDescription)
+    }
+    
+    func showAnswerResult(isCorrect: Bool) {
+        if isCorrect { correctAnswers += 1 } /// в случае если ответ правильно добавляем +1
+        switchButtonVisability(wantToHide: true)
+        imageView.layer.borderWidth = 8
+        imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self = self else { return }
+            showNextQuestionOrResults()
+            imageView.layer.borderWidth = 0
+            switchButtonVisability(wantToHide: false)
+        }
     }
     
     // MARK: - private methods
@@ -149,19 +163,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         counterLabel.text = step.questionNumber
     }
     
-    private func showAnswerResult(isCorrect: Bool) {
-        if isCorrect { correctAnswers += 1 } /// в случае если ответ правильно добавляем +1
-        switchButtonVisability(wantToHide: true)
-        imageView.layer.borderWidth = 8
-        imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            guard let self = self else { return }
-            showNextQuestionOrResults()
-            imageView.layer.borderWidth = 0
-            switchButtonVisability(wantToHide: false)
-        }
-    }
+    
     
     private func showNextQuestionOrResults() {
         if presenter.isLastQuestion() { /// раунд завершен

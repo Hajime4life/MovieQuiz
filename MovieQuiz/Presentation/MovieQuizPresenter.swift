@@ -1,8 +1,37 @@
 import UIKit
 
 final class MovieQuizPresenter {
-    let questionsAmount: Int = 10
+    
+    // MARK: - PRIVATE PROPERTIES
     private var currentQuestionIndex: Int = 0
+    
+    // MARK: - PUBLIC PROPERTIES
+    let questionsAmount: Int = 10
+    var currentQuestion: QuizQuestion?
+    weak var viewController: MovieQuizViewController?
+
+    
+    
+    
+    
+    // MARK: - PRIVATE METHODS
+    
+
+    
+    
+    // MARK: - PULBIC METHODS
+    
+    func noButtonClicked() {
+        guard let currentQuestion = currentQuestion else { return }
+        let givenAnswer = false
+        viewController?.showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
+        }
+    
+    func yesButtonClicked() {
+        guard let currentQuestion = currentQuestion else { return }
+        let givenAnswer = true
+        viewController?.showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
+    }
     
     
     func isLastQuestion() -> Bool {
