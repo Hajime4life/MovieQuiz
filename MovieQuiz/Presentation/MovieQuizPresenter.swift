@@ -9,28 +9,22 @@ final class MovieQuizPresenter {
     let questionsAmount: Int = 10
     var currentQuestion: QuizQuestion?
     weak var viewController: MovieQuizViewController?
-
-    
-    
-    
     
     // MARK: - PRIVATE METHODS
-    
-
-    
+    private func didAnswer(isYes: Bool) {
+        guard let currentQuestion = currentQuestion else { return }
+        let givenAnswer = isYes
+        viewController?.showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
+    }
     
     // MARK: - PULBIC METHODS
     
     func noButtonClicked() {
-        guard let currentQuestion = currentQuestion else { return }
-        let givenAnswer = false
-        viewController?.showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
-        }
+        didAnswer(isYes: false)
+    }
     
     func yesButtonClicked() {
-        guard let currentQuestion = currentQuestion else { return }
-        let givenAnswer = true
-        viewController?.showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
+        didAnswer(isYes: true)
     }
     
     
